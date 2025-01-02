@@ -1,0 +1,15 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  tasks:
+
+  - name: Create a test.example.net A record to point to 
+    community.general.cloudflare_dns:
+      zone: cloud-stacks.com
+      record: maged-ansible
+      type: A
+      value: 3.86.254.132
+      account_email: maged3bdelfatah@gmail.com
+      account_api_key: 590ab53cb70aca0b15bef2bea720d5dbea6fc
+    register: record

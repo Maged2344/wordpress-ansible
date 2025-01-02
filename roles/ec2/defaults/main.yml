@@ -1,0 +1,13 @@
+---
+# defaults file for roles/ec2
+# vars file for roles/ec2
+ec2_name: maged-ansible
+
+
+region: us-east-1
+instance_type: t2.micro
+image_id: ami-0e2c8caa4b6378d8c
+key_name: maged-ansible
+vpc_subnet_id: subnet-08cd41d7095c70a83
+security_group: wordpress-ansible
+name_tag: ansible

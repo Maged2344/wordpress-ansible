@@ -1,0 +1,38 @@
+---
+- name: Create EC2 instance
+  amazon.aws.ec2_instance:
+    name: "{{ ec2_name }}"
+
+
+    region: "{{ region }}"
+    instance_type: "{{ instance_type }}"
+    image_id: "{{ image_id }}"
+    key_name: "{{ key_name }}"
+    vpc_subnet_id: "{{ vpc_subnet_id }}"
+    network:
+      assign_public_ip: true
+    security_group: "{{ security_group }}"    
+    tags:
+      name: "{{ name_tag }}"
+  register: ec2
+ 
+
+- name: Print EC2 public IP
+  debug:
+    msg: "Public IP: {{ ec2.instances[0].network_interfaces[0].association.public_ip }}"
+
+
+- name: Add EC2 public IP to inventory file
+  lineinfile:
+    path: /home/maged/devops-projects/LEMP_ANSIBLE/inventory
+    create: yes
+    line: "{{ ec2.instances[0].network_interfaces[0].association.public_ip }}"
+
+- name: Refresh inventory after creating EC2 instances
+  meta: refresh_inventory
+
+- name: Wait to completely provision instances
+  pause:
+    minutes: 1
+
+

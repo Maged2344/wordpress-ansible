@@ -1,0 +1,78 @@
+---
+# tasks file for prometheus
+- name: create prometheus user
+  user:
+    name: prometheus
+    system: yes
+    shell: /sbin/nologin
+
+- name: create prometheus data directory
+  file:
+    name: "{{ item }}"
+    owner: prometheus
+    group: prometheus
+    state: directory
+  loop:
+    - /etc/prometheus
+    - /var/lib/prometheus
+
+- name: download prometheus tar file
+  get_url:
+    url: "{{ prometheus_url }}"
+    dest: /tmp
+
+- name: unarchive prometheus
+  unarchive:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+    dest: /tmp
+    remote_src: true
+
+- name: moving binaries in binary directory
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: /usr/local/bin
+    owner: prometheus
+    group: prometheus
+    mode: "0770"
+    remote_src: true
+  loop:
+    - prometheus
+    - promtool
+
+- name: moving binaries in binary directory
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: /usr/local/bin
+    owner: prometheus
+    group: prometheus
+    mode: "0770"
+    remote_src: true
+  loop:
+    - consoles
+    - console_libraries
+
+- name: moving prometheus.yml
+  copy:
+    src: templates/prometheus.yml
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+
+- name: copy service file
+  copy:
+    src: templates/prometheus.service
+    dest: /etc/systemd/system/
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: restart deamon
+  systemd:
+    daemon_reload: yes
+
+- name: start and enable prometheus service
+  systemd:
+    name: prometheus.service
+    state: started
+    enabled: yes

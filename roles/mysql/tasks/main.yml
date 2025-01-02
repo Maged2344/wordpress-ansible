@@ -1,0 +1,71 @@
+---
+
+# Update mysql root password for all root accounts  
+
+- name: Create wordpress user with remote access
+  mysql_user:
+    name: "{{wp_user}}"
+    password: "{{wp_password}}"
+    priv: "{{db_name}}.*:ALL"
+    host: '%'
+    append_privs: yes
+    login_user: root
+    login_password: "{{root_password}}"
+    state: present
+
+# Grant privileges to WordPress user for localhost (optional, ensures localhost access)
+- name: Grant privileges to WordPress user for localhost
+  mysql_user:
+    name: "{{wp_user}}"
+    password: "{{wp_password}}"
+    priv: "{{db_name}}.*:ALL"
+    host: 'localhost'
+    append_privs: yes
+    login_user: root
+    login_password: "{{root_password}}"
+    state: present
+
+#Create DataBase for the Mysql_user 
+
+- name: creating database 
+  mysql_db:
+    name: "{{db_name}}"
+    state: present
+    login_user: root
+    login_password: "{{root_password}}"
+
+
+
+- name: Enable remote login to mysql
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regex: '^bind-address\s*=\s*127.0.0.1'
+    line: 'bind-address = 0.0.0.0'
+    backup: yes
+  notify:
+    - Restart mysql
+
+- name: Create backup directory
+  become: true
+  file:
+    path: "{{ backup_directory }}"
+    state: directory
+    mode: '0755'
+
+- name: Deploy backup script
+  become: true
+  template:
+    src: backup.sh.j2
+    dest: /usr/local/bin/mysql_backup.sh
+    mode: '0755'
+
+- name: Create cron job for daily database backup
+  become: true
+  cron:
+    name: "Daily MySQL Backup"
+    hour: 12
+    job: "/usr/local/bin/mysql_backup.sh"
+
+
+
+

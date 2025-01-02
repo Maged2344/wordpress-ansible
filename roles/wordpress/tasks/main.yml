@@ -1,0 +1,62 @@
+---
+# tasks file for wordpress
+- name: download wordpress
+  get_url:
+      url: https://wordpress.org/latest.tar.gz
+      dest: /tmp/latest.tar.gz
+      validate_certs: no
+
+- name: Unzip Wordpress tar file
+  unarchive: 
+        src: /tmp/latest.tar.gz 
+        dest: /var/www/
+        remote_src: yes
+- name: Set permissions for WordPress
+  file:
+    path: /var/www/wordpress
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+    recurse: yes
+              
+- name: Configure Nginx for WordPress
+  template:
+    src: wordpress-nginx.conf.j2
+    dest: /etc/nginx/sites-available/wordpress
+ 
+
+- name: Enable Nginx site
+  file:
+    src: /etc/nginx/sites-available/wordpress
+    dest: /etc/nginx/sites-enabled/wordpress
+    state: link
+
+- name: Remove default Nginx configuration
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Test Nginx configuration
+  command: nginx -t
+  register: nginx_test
+  ignore_errors: true
+
+- name: Fail if Nginx test failed
+  fail:
+    msg: "Nginx configuration test failed. Check your configuration."
+  when: nginx_test.rc != 0
+
+- name: Reload Nginx
+  service:
+    name: nginx
+    state: reloaded
+
+- name: Configure WordPress
+  template:
+    src: wp-config.php.j2
+    dest: /var/www/wordpress/wp-config.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+

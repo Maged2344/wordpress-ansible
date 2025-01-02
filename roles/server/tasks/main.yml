@@ -1,0 +1,111 @@
+---
+- name: kill all apache2 process (Ubuntu only)
+  package:
+     name: apache2
+     state: absent
+  when: ansible_distribution == "Ubuntu"
+
+- name: Remove httpd (Amazon Linux only)
+  package:
+    name: httpd
+    state: absent
+  when: ansible_distribution == "Amazon" 
+
+- name: install nginx
+  package:
+    name: nginx
+    state: present
+
+- name: start and enable Nginx
+  service: 
+      name: nginx
+      state: started
+      enabled: yes
+
+- name: Add Ondřej PHP PPA (Ubuntu only)
+  ansible.builtin.apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: update cache
+  package:
+    update_cache: yes
+
+- name: installing PHP dependencies (Ubuntu only)
+  package: 
+   name: "{{ item }}"
+   state: present
+   update_cache: yes
+  with_items:
+       - php8.1
+       - php8.1-fpm
+       - php8.1-mysql
+       - unzip
+  when: ansible_distribution == "Ubuntu"
+
+
+- name: installing mysql (Ubuntu only)
+  package: 
+   name: "{{ item }}"
+   state: present
+   update_cache: yes
+  with_items:
+       - mysql-server
+       - mysql-client
+       - python3-dev
+       - python3-mysqldb 
+       - libmysqlclient-dev
+  when: ansible_distribution == "Ubuntu"
+  notify:
+    - Set root user password
+- name: start mysql (Ubuntu only)
+  service: 
+      name: mysql
+      state: started
+      enabled: yes
+  when: ansible_distribution == "Ubuntu"
+
+
+- name: Install PHP and dependencies (Amazon Linux only)
+  package:
+   name: "{{ item }}"
+   state: present
+   update_cache: yes
+  with_items:
+      - php
+      - php-fpm
+      - php-mysqlnd
+      - unzip
+      - wget
+      - python3-devel
+      - gcc     
+  when: ansible_distribution == "Amazon"
+    
+- name: Install MySQL repo
+  yum:
+    name: http://dev.mysql.com/get/mysql57-community-release-el7-8.noarch.rpm
+    state: present
+  when: ansible_distribution == "Amazon"
+
+- name: Install MySQL packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - mysql-community-server
+    - mysql-community-client
+    - python3-PyMySQL  # Updated to use Python 3
+    - MySQL-python
+  notify:
+    - Set root user password
+  when: ansible_distribution == "Amazon"
+
+
+
+- name: start mysql (Amazon Linux only)
+  service: 
+      name: mysqld
+      state: started
+      enabled: yes
+  when: ansible_distribution == "Amazon" 

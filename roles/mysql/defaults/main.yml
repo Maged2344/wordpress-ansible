@@ -1,0 +1,9 @@
+---
+# defaults file for mysql
+
+root_password: root
+wp_user: wp_user
+wp_password: wp_password
+db_name: wordpress
+password_validation_policy: 1     
+backup_directory: "/var/backups/mysql"

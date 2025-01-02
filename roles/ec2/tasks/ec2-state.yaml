@@ -1,0 +1,65 @@
+---
+- name: ec2-state
+  hosts: localhost
+  gather_facts: false
+  vars:
+    aws_region: "us-east-1"
+    ec2_action: "start"
+    ec2_name: "maged-ansible"
+
+  tasks:
+    - name: Get EC2 instance information
+      amazon.aws.ec2_instance_info:
+        region: "{{ aws_region }}"
+        filters:
+          "tag:Name": "{{ ec2_name }}"
+      register: ec2_info
+      tags:
+        - start
+        - stop
+        - delete
+
+    - name: Start EC2 instances
+      amazon.aws.ec2_instance:
+        region: "{{ aws_region }}"
+        instance_ids: "{{ item.instance_id }}"
+        state: running
+      loop: "{{ ec2_info.instances }}"
+      loop_control:
+        label: "{{ item.instance_id }}"
+      tags:
+        - start
+
+    - name: Confirm instance started
+      debug:
+        msg: "Instance started."
+
+    - name: Stop EC2 instances
+      amazon.aws.ec2_instance:
+        region: "{{ aws_region }}"
+        instance_ids: "{{ item.instance_id }}"
+        state: stopped
+      loop: "{{ ec2_info.instances }}"
+      loop_control:
+        label: "{{ item.instance_id }}"
+      tags:
+        - stop
+
+    - name: Confirm instance stoped
+      debug:
+        msg: "Instance stoped."
+
+    - name: Delete EC2 instances
+      amazon.aws.ec2_instance:
+        region: "{{ aws_region }}"
+        instance_ids: "{{ item.instance_id }}"
+        state: absent
+      loop: "{{ ec2_info.instances }}"
+      loop_control:
+        label: "{{ item.instance_id }}"
+      tags:
+        - delete
+
+    - name: Confirm instance deleted
+      debug:
+        msg: "Instance terminated."

@@ -1,0 +1,69 @@
+---
+# tasks file for ansible_role_install_grafana
+
+
+- name: Install packages 
+  become: true
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - adduser
+    - libfontconfig1
+    - musl
+
+- name: Install a .deb package from the internet
+  become: true
+  ansible.builtin.apt:
+    deb: https://dl.grafana.com/oss/release/grafana_10.2.0_amd64.deb
+
+
+- name: Create 'datasources.yml'
+  become: true
+  ansible.builtin.template:
+    src: "datasources.j2"
+    dest: "/etc/grafana/provisioning/datasources/datasources.yaml"
+
+
+    #- name: Create dashboard
+    #  become: true
+    #  ansible.builtin.copy:
+    #    src: "node_exporter_dashboard.yml"
+    #    dest: "/etc/grafana/provisioning/dashboards/node_exporter.yaml"
+
+
+- name: Enable service 'grafana-server' and ensure it is started
+  become: true
+  ansible.builtin.systemd:
+    name: grafana-server
+    enabled: true
+    state: started
+
+- name: wait for service up
+  uri:
+    url: "http://localhost:3000"
+    status_code: 200
+  register: __result
+  until: __result.status == 200
+  retries: 120
+  delay: 1
+
+
+- name: Configure Grafana for Subpath
+  blockinfile:
+    path: /etc/grafana/grafana.ini
+    marker: "; Ansible Managed Block - Subpath Configuration"
+    block: |
+      [server]
+      root_url = %(protocol)s://%(domain)s:/grafana/
+  notify:
+    - restart_grafana
+
+- name: Enable Nginx site configuration
+  file:
+    src: /etc/nginx/sites-available/wordpress
+    dest: /etc/nginx/sites-enabled/wordpress
+    state: link
+  notify:
+    - restart_nginx
+  

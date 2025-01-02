@@ -1,0 +1,7 @@
+---
+# vars file for wordpress
+wp_user: wp_user
+wp_password: wp_password
+db_name: wordpress
+wp_site_url: 35.170.249.91
+wordpress_root: /var/www/wordpress

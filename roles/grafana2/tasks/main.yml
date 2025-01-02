@@ -1,0 +1,14 @@
+---
+# tasks file for ansible_role_install_grafana
+
+#- name: Install on RedHat os family
+#  include_tasks: task_RedHat.yml
+#  when:
+#    ansible_os_family == 'RedHat'
+
+- name: Install on Debian os family
+  include_tasks: task_Debian.yml
+  when:
+    ansible_os_family == 'Debian'
+
+...
